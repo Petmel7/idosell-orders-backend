@@ -1,7 +1,6 @@
 const orderService = require('../services/order.service');
 const csvUtil = require('../utils/csv.util');
 
-
 async function getOrders(req, res, next) {
     try {
         const minWorth = req.query.minWorth ? Number(req.query.minWorth) : undefined;
@@ -32,6 +31,5 @@ async function getOrder(req, res, next) {
         next(err);
     }
 }
-
 
 module.exports = { getOrders, getOrder };

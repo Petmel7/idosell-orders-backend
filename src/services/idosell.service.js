@@ -4,7 +4,7 @@ const config = require('../config');
 const path = require('path');
 const fs = require('fs');
 
-// клієнт тільки для реального API
+// client only for real API
 const client = axios.create({
     baseURL: config.idosell.baseUrl,
     timeout: 20_000,
