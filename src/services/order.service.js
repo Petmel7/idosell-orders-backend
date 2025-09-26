@@ -1,29 +1,74 @@
 
 const Order = require('../models/order.model');
 const idosell = require('./idosell.service');
+const config = require('../config');
+
+// function mapIdoOrderToModel(idoOrder) {
+//     const products = (idoOrder.products || []).map(p => ({
+//         productId: p.id || p.productId || String(p.product_id || p.variant_id || ''),
+//         quantity: Number(p.quantity || p.qty || 1),
+//     }));
+
+//     const totalAmount = Number(idoOrder.total_amount || idoOrder.amount || idoOrder.gross || 0);
+
+//     return {
+//         orderNumber: String(idoOrder.order_number || idoOrder.number || idoOrder.id),
+//         products,
+//         totalAmount,
+//         status: String(idoOrder.status || '').toLowerCase(),
+//         raw: idoOrder,
+//     };
+// }
 
 function mapIdoOrderToModel(idoOrder) {
-    const products = (idoOrder.products || []).map(p => ({
-        productId: p.id || p.productId || String(p.product_id || p.variant_id || ''),
-        quantity: Number(p.quantity || p.qty || 1),
+    const productsRaw = idoOrder.products || idoOrder.orderDetails || [];
+    const products = productsRaw.map(p => ({
+        productId: p.id || p.productId || p.product_id || p.products_id || null,
+        quantity: Number(p.quantity || p.qty || p.products_quantity || 1),
     }));
 
-    const totalAmount = Number(idoOrder.total_amount || idoOrder.amount || idoOrder.gross || 0);
+    const totalAmount =
+        idoOrder.totalAmount ||
+        idoOrder.total ||
+        idoOrder.orderProductsCost ||
+        (idoOrder.orderBaseCurrency && idoOrder.orderBaseCurrency.orderProductsCost) ||
+        0;
 
     return {
-        orderNumber: String(idoOrder.order_number || idoOrder.number || idoOrder.id),
+        orderNumber:
+            idoOrder.orderNumber ||
+            idoOrder.orderSn ||
+            idoOrder.orders_sn ||
+            String(idoOrder.orderId || idoOrder.orderSerialNumber),
         products,
-        totalAmount,
-        status: String(idoOrder.status || '').toLowerCase(),
+        totalAmount: Number(totalAmount),
+        status: String(idoOrder.status || idoOrder.orderType || 'new').toLowerCase(),
         raw: idoOrder,
     };
 }
 
 async function upsertOrdersFromIdoSell(sinceDate) {
-    const data = await idosell.fetchOrders(sinceDate);
-    console.log('📡 Raw response from idosell.fetchOrders:', JSON.stringify(data, null, 2));
+    // const data = await idosell.fetchOrders(sinceDate);
+    // console.log('📡 Raw response from idosell.fetchOrders:', JSON.stringify(data, null, 2));
 
-    const ordersArray = Array.isArray(data) ? data : (data.orders || []);
+    // const ordersArray = Array.isArray(data) ? data : (data.orders || []);
+
+    const minutes = sinceDate
+        ? Math.floor((Date.now() - sinceDate.getTime()) / (1000 * 60))
+        : null;
+
+    // const data = await idosell.fetchRecentOrders({
+    //     minutes,
+    //     limit: 200,
+    //     maxPages: 20,
+    // });
+
+    const data = await idosell.fetchRecentOrders({
+        minutes: null, // витягне всі
+        limit: 20,
+    });
+
+    const ordersArray = Array.isArray(data) ? data : [];
     console.log('📊 ordersArray length:', ordersArray.length);
 
     const results = [];
@@ -81,16 +126,18 @@ async function updatePendingOrders() {
     const finalStatuses = ['finished', 'lost', 'false'];
     const pending = await Order.find({ status: { $nin: finalStatuses } }).limit(200);
 
-    if (!pending.length) {
-        console.log('ℹ️ No pending orders to update');
-        return [];
+    let results = [];
+
+    if (pending.length) {
+        console.log(`📋 Found ${pending.length} pending orders → checking updates`);
+        const since = new Date(Date.now() - 1000 * 60 * 60 * 24);
+        results = await upsertOrdersFromIdoSell(since);
+    } else {
+        console.log('ℹ️ No pending orders → running initial/full sync');
+        const since = new Date(Date.now() - 1000 * 60 * config.idosell.ordersDateRangeMinutes);
+        results = await upsertOrdersFromIdoSell(since);
     }
 
-    // We receive updates for the last 24 hours.
-    const since = new Date(Date.now() - 1000 * 60 * 60 * 24);
-    const results = await upsertOrdersFromIdoSell(since);
-
-    console.log('📊 updatePendingOrders results:', results.map(r => r.action));
     return results;
 }
 
