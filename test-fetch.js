@@ -1,4 +1,4 @@
-// test-fetch.js (корінь проекту)
+
 const { fetchRecentOrders } = require('./src/services/idosell.service');
 (async () => {
     const orders = await fetchRecentOrders({ minutes: 60, limit: 50 });

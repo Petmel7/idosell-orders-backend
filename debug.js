@@ -1,5 +1,4 @@
-// debug-search.js
-// Змінити ці значення відповідно до твоїх даних
+
 const axios = require("axios");
 const fs = require("fs");
 

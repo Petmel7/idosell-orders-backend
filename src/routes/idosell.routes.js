@@ -1,11 +1,10 @@
+
 const express = require('express');
 const router = express.Router();
-const orderCtrl = require('../controllers/order.controller');
+const idosellCtrl = require('../controllers/idosell.controller');
 const auth = require('../middleware/auth.middleware');
 
 router.use(auth.requireAdmin);
-router.get('/orders', orderCtrl.getOrders);
-router.get('/orders/:id', orderCtrl.getOrder);
-
+router.get('/orders', idosellCtrl.getOrders);
 
 module.exports = router;

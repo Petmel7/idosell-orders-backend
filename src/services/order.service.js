@@ -3,23 +3,6 @@ const Order = require('../models/order.model');
 const idosell = require('./idosell.service');
 const config = require('../config');
 
-// function mapIdoOrderToModel(idoOrder) {
-//     const products = (idoOrder.products || []).map(p => ({
-//         productId: p.id || p.productId || String(p.product_id || p.variant_id || ''),
-//         quantity: Number(p.quantity || p.qty || 1),
-//     }));
-
-//     const totalAmount = Number(idoOrder.total_amount || idoOrder.amount || idoOrder.gross || 0);
-
-//     return {
-//         orderNumber: String(idoOrder.order_number || idoOrder.number || idoOrder.id),
-//         products,
-//         totalAmount,
-//         status: String(idoOrder.status || '').toLowerCase(),
-//         raw: idoOrder,
-//     };
-// }
-
 function mapIdoOrderToModel(idoOrder) {
     const productsRaw = idoOrder.products || idoOrder.orderDetails || [];
     const products = productsRaw.map(p => ({
@@ -48,24 +31,15 @@ function mapIdoOrderToModel(idoOrder) {
 }
 
 async function upsertOrdersFromIdoSell(sinceDate) {
-    // const data = await idosell.fetchOrders(sinceDate);
-    // console.log('📡 Raw response from idosell.fetchOrders:', JSON.stringify(data, null, 2));
-
-    // const ordersArray = Array.isArray(data) ? data : (data.orders || []);
 
     const minutes = sinceDate
         ? Math.floor((Date.now() - sinceDate.getTime()) / (1000 * 60))
         : null;
 
-    // const data = await idosell.fetchRecentOrders({
-    //     minutes,
-    //     limit: 200,
-    //     maxPages: 20,
-    // });
-
     const data = await idosell.fetchRecentOrders({
-        minutes: null, // витягне всі
-        limit: 20,
+        minutes,
+        limit: 200,
+        maxPages: 20,
     });
 
     const ordersArray = Array.isArray(data) ? data : [];
