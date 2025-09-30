@@ -16,7 +16,7 @@ const client = axios.create({
     },
 });
 
-// ... твої helper-и: extractOrdersFromResponse, normalizeOrder ...
+//helper: extractOrdersFromResponse, normalizeOrder ...
 
 async function getOrdersPage(limit = DEFAULT_LIMIT, offset = 0) {
     const res = await client.get('/orders/orders', { params: { limit, offset } });

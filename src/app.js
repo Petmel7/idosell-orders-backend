@@ -11,18 +11,15 @@ const { errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
 
-// middlewares
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// routes
 app.use('/api/auth', authRoutes);
 app.use('/api/idosell', idosellRoutes);
 app.use('/api', orderRoutes);
 
-// error handler
 app.use(errorHandler);
 
 module.exports = app;
